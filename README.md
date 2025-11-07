@@ -1,12 +1,10 @@
 # IDverse — Decentralized Identity & Access Management (IAM) dApp
 
 ## Project description
-IDverse is a prototype Decentralized Identity and Access Management (dApp).
-It demonstrates:
-- DID registration (on-chain anchor for DID documents).
-- Credential issuance workflow with off-chain credential storage via IPFS.
-- On-chain credential status / revocation pointers for verifiers.
-- Example front-end connection via Ethers.js and MetaMask.
+
+This project implements a decentralized Identity and Access Management (IAM) system using Ethereum smart contracts and self-sovereign identity (SSI) principles. The system enables *issuers* to create and sign credentials, *holders* to manage decentralized identifiers and store valid credentials, and *verifiers* to actually validate the credentials and check if they need to be revoked.
+
+Only minimal data is stored on the chain such as metadata, hashes of the credentials, and audit events. Full credential documents are stored off-chain using `IPFS`, with hashes linking them to records that are on the chain.The project also includes a sample front-end built with React and Ethers.js, enabling authentication and contract interactions through MetaMask.
 
 This repository contains sample contracts, deployment scripts, and local test utilities for development and demonstration.
 
@@ -25,10 +23,10 @@ See repo: https://github.com/Nisarg01-01/IDverse.git
 
 ## Quick setup (Windows, PowerShell)
 1.  Clone the repo (if you haven't already):
-   ```powershell
-   git clone https://github.com/Nisarg01-01/IDverse.git
-   cd IDverse
-   ```
+    ```powershell
+    git clone https://github.com/Nisarg01-01/IDverse.git
+    cd IDverse
+    ```
 
 2.  Install dependencies:
     ```powershell
