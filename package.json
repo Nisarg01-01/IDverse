@@ -1,0 +1,45 @@
+{
+    "name": "idverse",
+    "version": "1.0.0",
+    "description": "Decentralized Identity and Access Management (IAM) dApp",
+    "main": "index.js",
+    "scripts": {
+        "compile": "npx hardhat compile",
+        "node": "npx hardhat node",
+        "deploy:local": "npx hardhat run --network local scripts/deploy.js",
+        "test": "npx hardhat test"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Nisarg01-01/IDverse.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "bugs": {
+        "url": "https://github.com/Nisarg01-01/IDverse/issues"
+    },
+    "homepage": "https://github.com/Nisarg01-01/IDverse#readme",
+    "devDependencies": {
+        "@nomicfoundation/hardhat-ignition": "^3.0.4",
+        "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.1",
+        "@types/chai": "^4.3.20",
+        "@types/chai-as-promised": "^8.0.2",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^22.19.0",
+        "chai": "^5.3.3",
+        "ethers": "^6.15.0",
+        "forge-std": "github:foundry-rs/forge-std#v1.9.4",
+        "hardhat": "^3.0.11",
+        "mocha": "^11.7.4",
+        "typescript": "~5.8.0"
+    },
+    "dependencies": {
+        "@helia/unixfs": "^6.0.3",
+        "dotenv": "^17.2.3",
+        "helia": "^6.0.8",
+        "uint8arrays": "^5.1.0",
+        "web3.storage": "^4.5.5"
+    }
+}
