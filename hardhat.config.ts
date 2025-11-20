@@ -15,5 +15,11 @@ export default defineConfig({
     // local node used for development and demo
     local: { type: 'http', url: 'http://127.0.0.1:8545' }
   },
+  paths: {
+    tests: './test'
+  },
+  mocha: {
+    timeout: 40000
+  }
   // no testnet configs in local-first mode
 });
