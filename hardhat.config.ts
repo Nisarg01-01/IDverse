@@ -1,19 +1,15 @@
-import 'dotenv/config';
-import '@nomicfoundation/hardhat-toolbox-mocha-ethers';
-import { defineConfig } from 'hardhat/config';
+import { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-toolbox";
+import "dotenv/config";
 
-export default defineConfig({
-  solidity: {
-    profiles: {
-      default: { version: '0.8.28' }
-    }
-  },
+const config: HardhatUserConfig = {
+  solidity: "0.8.28",
   networks: {
-    // built-in simulated hardhat network
-    hardhat: { type: 'edr-simulated' },
-
-    // local node used for development and demo
-    local: { type: 'http', url: 'http://127.0.0.1:8545' }
+    hardhat: {
+    },
+    localhost: {
+      url: "http://127.0.0.1:8545",
+    },
   },
   paths: {
     tests: './test'
@@ -21,5 +17,6 @@ export default defineConfig({
   mocha: {
     timeout: 40000
   }
-  // no testnet configs in local-first mode
-});
+};
+
+export default config;

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+// Interfaces for the main contracts - useful if you want to interact with them from other contracts
+
 interface IDIDRegistry {
     function registerDID(bytes32 did, address controllerAddr, string calldata pointer) external;
     function updateController(bytes32 did, address newController) external;

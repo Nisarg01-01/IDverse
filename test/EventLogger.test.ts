@@ -1,7 +1,5 @@
 import { expect } from "chai";
-import { network } from "hardhat";
-
-const { ethers } = await network.connect();
+import { ethers } from "hardhat";
 
 describe("EventLogger", function () {
   let eventLogger: any;
@@ -29,10 +27,11 @@ describe("EventLogger", function () {
     });
 
     it("Should emit VerifierAuthorized event for owner", async function () {
-      // Redeploy to catch the event
-      const EventLoggerFactory = await ethers.getContractFactory("EventLogger");
-      await expect(EventLoggerFactory.deploy())
-        .to.emit(EventLoggerFactory, "VerifierAuthorized");
+      const eventLogger = await ethers.deployContract("EventLogger");
+      const tx = eventLogger.deploymentTransaction();
+      await expect(tx)
+        .to.emit(eventLogger, "VerifierAuthorized")
+        .withArgs(owner.address);
     });
   });
 

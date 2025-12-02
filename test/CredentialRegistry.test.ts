@@ -1,7 +1,5 @@
 import { expect } from "chai";
-import { network } from "hardhat";
-
-const { ethers } = await network.connect();
+import { ethers } from "hardhat";
 
 describe("CredentialRegistry", function () {
   let credentialRegistry: any;
@@ -30,13 +28,14 @@ describe("CredentialRegistry", function () {
       await expect(
         credentialRegistry
           .connect(issuer)
-          .issueCredential(credentialId, credentialHash, credentialCID)
+          .issueCredential(credentialId, holder.address, credentialHash, credentialCID)
       )
         .to.emit(credentialRegistry, "CredentialIssued")
-        .withArgs(credentialId, issuer.address, credentialHash, credentialCID);
+        .withArgs(credentialId, issuer.address, holder.address, credentialHash, credentialCID);
 
       const credential = await credentialRegistry.getCredential(credentialId);
       expect(credential.issuer).to.equal(issuer.address);
+      expect(credential.holder).to.equal(holder.address);
       expect(credential.credentialHash).to.equal(credentialHash);
       expect(credential.cid).to.equal(credentialCID);
       expect(credential.revoked).to.equal(false);
@@ -45,12 +44,12 @@ describe("CredentialRegistry", function () {
     it("Should prevent duplicate credential issuance", async function () {
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
 
       await expect(
         credentialRegistry
           .connect(issuer)
-          .issueCredential(credentialId, credentialHash, credentialCID)
+          .issueCredential(credentialId, holder.address, credentialHash, credentialCID)
       ).to.be.revertedWith("credential exists");
     });
 
@@ -60,10 +59,10 @@ describe("CredentialRegistry", function () {
 
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, hash1, credentialCID);
+        .issueCredential(credentialId, holder.address, hash1, credentialCID);
       await credentialRegistry
         .connect(holder)
-        .issueCredential(credentialId2, hash2, credentialCID);
+        .issueCredential(credentialId2, holder.address, hash2, credentialCID);
 
       const cred1 = await credentialRegistry.getCredential(credentialId);
       const cred2 = await credentialRegistry.getCredential(credentialId2);
@@ -75,7 +74,7 @@ describe("CredentialRegistry", function () {
     it("Should record correct timestamp on issuance", async function () {
       const tx = await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
       const receipt = await tx.wait();
       const block = await ethers.provider.getBlock(receipt!.blockNumber);
 
@@ -86,18 +85,18 @@ describe("CredentialRegistry", function () {
     it("Should emit correct event on issuance", async function () {
       const tx = await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
 
       await expect(tx)
         .to.emit(credentialRegistry, "CredentialIssued")
-        .withArgs(credentialId, issuer.address, credentialHash, credentialCID);
+        .withArgs(credentialId, issuer.address, holder.address, credentialHash, credentialCID);
     });
 
     it("Should allow empty CID string", async function () {
       await expect(
         credentialRegistry
           .connect(issuer)
-          .issueCredential(credentialId, credentialHash, "")
+          .issueCredential(credentialId, holder.address, credentialHash, "")
       ).to.not.be.reverted;
 
       const credential = await credentialRegistry.getCredential(credentialId);
@@ -109,7 +108,7 @@ describe("CredentialRegistry", function () {
       await expect(
         credentialRegistry
           .connect(issuer)
-          .issueCredential(credentialId, zeroHash, credentialCID)
+          .issueCredential(credentialId, holder.address, zeroHash, credentialCID)
       ).to.not.be.reverted;
 
       const credential = await credentialRegistry.getCredential(credentialId);
@@ -121,7 +120,7 @@ describe("CredentialRegistry", function () {
     beforeEach(async function () {
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
     });
 
     it("Should allow issuer to revoke credential", async function () {
@@ -183,7 +182,7 @@ describe("CredentialRegistry", function () {
     beforeEach(async function () {
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
     });
 
     it("Should return correct credential data", async function () {
@@ -231,10 +230,10 @@ describe("CredentialRegistry", function () {
 
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, hash1, credentialCID);
+        .issueCredential(credentialId, holder.address, hash1, credentialCID);
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId2, hash2, credentialCID);
+        .issueCredential(credentialId2, holder.address, hash2, credentialCID);
 
       const cred1 = await credentialRegistry.getCredential(credentialId);
       const cred2 = await credentialRegistry.getCredential(credentialId2);
@@ -246,10 +245,10 @@ describe("CredentialRegistry", function () {
     it("Should allow issuer to revoke only their credentials", async function () {
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
       await credentialRegistry
         .connect(holder)
-        .issueCredential(credentialId2, credentialHash, credentialCID);
+        .issueCredential(credentialId2, holder.address, credentialHash, credentialCID);
 
       // Issuer can revoke their own
       await expect(
@@ -265,10 +264,10 @@ describe("CredentialRegistry", function () {
     it("Should maintain independence between credentials", async function () {
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId2, credentialHash, credentialCID);
+        .issueCredential(credentialId2, holder.address, credentialHash, credentialCID);
 
       // Revoke first credential
       await credentialRegistry.connect(issuer).revokeCredential(credentialId);
@@ -289,7 +288,7 @@ describe("CredentialRegistry", function () {
       await expect(
         credentialRegistry
           .connect(issuer)
-          .issueCredential(credentialId, credentialHash, longCID)
+          .issueCredential(credentialId, holder.address, credentialHash, longCID)
       ).to.not.be.reverted;
 
       const credential = await credentialRegistry.getCredential(credentialId);
@@ -312,7 +311,7 @@ describe("CredentialRegistry", function () {
       await expect(
         credentialRegistry
           .connect(issuer)
-          .issueCredential(credentialId, complexHash, credentialCID)
+          .issueCredential(credentialId, holder.address, complexHash, credentialCID)
       ).to.not.be.reverted;
 
       const credential = await credentialRegistry.getCredential(credentialId);
@@ -326,7 +325,7 @@ describe("CredentialRegistry", function () {
         promises.push(
           credentialRegistry
             .connect(issuer)
-            .issueCredential(id, credentialHash, credentialCID)
+            .issueCredential(id, holder.address, credentialHash, credentialCID)
         );
       }
 
@@ -336,13 +335,13 @@ describe("CredentialRegistry", function () {
     it("Should handle credential ID collision attempts", async function () {
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
 
       // Different issuer tries to use same ID
       await expect(
         credentialRegistry
           .connect(holder)
-          .issueCredential(credentialId, credentialHash, credentialCID)
+          .issueCredential(credentialId, holder.address, credentialHash, credentialCID)
       ).to.be.revertedWith("credential exists");
     });
   });
@@ -351,17 +350,17 @@ describe("CredentialRegistry", function () {
     it("Should emit CredentialIssued event with all parameters", async function () {
       const tx = await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
 
       await expect(tx)
         .to.emit(credentialRegistry, "CredentialIssued")
-        .withArgs(credentialId, issuer.address, credentialHash, credentialCID);
+        .withArgs(credentialId, issuer.address, holder.address, credentialHash, credentialCID);
     });
 
     it("Should emit CredentialRevoked event with all parameters", async function () {
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
 
       const tx = await credentialRegistry
         .connect(issuer)
@@ -375,7 +374,7 @@ describe("CredentialRegistry", function () {
     it("Should emit events in correct order for workflow", async function () {
       const tx1 = await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
       await expect(tx1).to.emit(credentialRegistry, "CredentialIssued");
 
       const tx2 = await credentialRegistry
@@ -389,7 +388,7 @@ describe("CredentialRegistry", function () {
     it("Should issue credential with reasonable gas", async function () {
       const tx = await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
       const receipt = await tx.wait();
 
       // Gas should be reasonable (adjust threshold as needed)
@@ -399,7 +398,7 @@ describe("CredentialRegistry", function () {
     it("Should revoke credential with reasonable gas", async function () {
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
 
       const tx = await credentialRegistry
         .connect(issuer)
