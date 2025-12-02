@@ -88,9 +88,9 @@ npx hardhat run scripts/deploy-local.ts --network localhost
 
 Expected output:
 ```
-✅ DIDRegistry deployed to: 0x5FbDB2315678afecb367f032d93F642f64180aa3
-✅ CredentialRegistry deployed to: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-✅ EventLogger deployed to: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+DIDRegistry deployed to: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+CredentialRegistry deployed to: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+EventLogger deployed to: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
 ```
 
 ### Step 4: Start Frontend
@@ -228,4 +228,4 @@ https://github.com/Nisarg01-01/IDverse
 
 ---
 
-**Built with ❤️ using Ethereum, IPFS, React, and TypeScript**
+**Built with Ethereum, IPFS, React, and TypeScript**

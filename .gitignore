@@ -37,3 +37,9 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Keep these markdown files local only
+DEVELOPMENT.md
+PRESENTATION_CONTENT.md
+VERIFICATION_GUIDE.md
+client/README.md
