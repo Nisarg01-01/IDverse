@@ -1,11 +1,14 @@
 import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { type WalletState } from './services/web3';
 import WalletConnect from './components/WalletConnect';
 import IssuerPage from './pages/IssuerPage';
-import { Wallet, FileText, CheckCircle } from 'lucide-react';
+import HolderPage from './pages/HolderPage';
+import { Wallet, FileText, CheckCircle, Send, User } from 'lucide-react';
 
-function App() {
+function AppContent() {
   const [wallet, setWallet] = useState<WalletState | null>(null);
+  const location = useLocation();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -23,20 +26,49 @@ function App() {
               </div>
             </div>
 
-            {wallet?.isConnected && (
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">Connected Wallet</p>
-                  <p className="text-sm font-mono font-medium text-gray-900">
-                    {wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg">
-                  <CheckCircle size={16} />
-                  <span className="text-sm font-medium">{wallet.balance} ETH</span>
-                </div>
-              </div>
-            )}
+            <div className="flex items-center gap-4">
+              {wallet?.isConnected && (
+                <>
+                  {/* Navigation */}
+                  <nav className="flex gap-2">
+                    <Link
+                      to="/issuer"
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        location.pathname === '/issuer'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Send size={16} />
+                      <span className="text-sm font-medium">Issue</span>
+                    </Link>
+                    <Link
+                      to="/holder"
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        location.pathname === '/holder'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <User size={16} />
+                      <span className="text-sm font-medium">My Credentials</span>
+                    </Link>
+                  </nav>
+
+                  {/* Wallet Info */}
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">Connected Wallet</p>
+                    <p className="text-sm font-mono font-medium text-gray-900">
+                      {wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg">
+                    <CheckCircle size={16} />
+                    <span className="text-sm font-medium">{wallet.balance} ETH</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -55,7 +87,7 @@ function App() {
                 Welcome to IDverse
               </h2>
               <p className="text-gray-600 text-center mb-8">
-                Connect your wallet to start issuing verifiable credentials on the blockchain
+                Connect your wallet to start managing verifiable credentials on the blockchain
               </p>
               <WalletConnect onWalletConnected={setWallet} />
             </div>
@@ -93,16 +125,28 @@ function App() {
             </div>
           </div>
         ) : (
-          <IssuerPage />
+          <Routes>
+            <Route path="/" element={<IssuerPage />} />
+            <Route path="/issuer" element={<IssuerPage />} />
+            <Route path="/holder" element={<HolderPage />} />
+          </Routes>
         )}
       </main>
 
       {/* Footer */}
       <footer className="mt-12 py-6 text-center text-sm text-gray-600">
-        <p>IDverse - Phase 1 Demo (70% Completion)</p>
+        <p>IDverse - Phase 2 Progress (75% Completion)</p>
         <p className="mt-1">Built with Ethereum, React, and TypeScript</p>
       </footer>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 

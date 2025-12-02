@@ -1,0 +1,20 @@
+{
+  "network": "localhost",
+  "chainId": 31337,
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "timestamp": "2025-12-02T19:01:22.061Z",
+  "contracts": {
+    "DIDRegistry": {
+      "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "transactionHash": "0x2409845f480b2863c8b8928b822fbb36de835ca7f6dcdd8d96618420052f7783"
+    },
+    "CredentialRegistry": {
+      "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+      "transactionHash": "0x73917b40807a9bb4ba4533fbcc5d3a4756049ea4688b3d48183eb22f19d106e6"
+    },
+    "EventLogger": {
+      "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+      "transactionHash": "0x0cefbea1853e9603caa701375e8ee3aedc7d83d8d33e5fe51d8e4e5eb5b92416"
+    }
+  }
+}

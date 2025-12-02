@@ -159,6 +159,85 @@ class Web3Service {
     }
   }
 
+  async getIssuedCredentials(issuerAddress?: string): Promise<Array<{
+    credentialId: string;
+    issuer: string;
+    credentialHash: string;
+    cid: string;
+    blockNumber: number;
+  }>> {
+    if (!this.credentialRegistryContract || !this.provider) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      const filter = this.credentialRegistryContract.filters.CredentialIssued(
+        null,
+        issuerAddress || null
+      );
+
+      const events = await this.credentialRegistryContract.queryFilter(filter, 0, 'latest');
+
+      return events.map((event: any) => ({
+        credentialId: event.args.credentialId,
+        issuer: event.args.issuer,
+        credentialHash: event.args.credentialHash,
+        cid: event.args.cid,
+        blockNumber: event.blockNumber,
+      }));
+    } catch (error) {
+      console.error('Failed to get issued credentials:', error);
+      throw error;
+    }
+  }
+
+  async getCredentialDetails(credentialId: string) {
+    if (!this.credentialRegistryContract) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      const credential = await this.credentialRegistryContract.getCredential(credentialId);
+
+      // Check if credential exists (issuer will be zero address if not)
+      if (credential[0] === '0x0000000000000000000000000000000000000000') {
+        return null;
+      }
+
+      return {
+        issuer: credential[0],
+        credentialHash: credential[1],
+        cid: credential[2],
+        issuedAt: new Date(Number(credential[3]) * 1000),
+        revoked: credential[4],
+      };
+    } catch (error) {
+      console.error('Failed to get credential details:', error);
+      return null;
+    }
+  }
+
+  async getDIDForAddress(address: string): Promise<string | null> {
+    if (!this.didRegistryContract) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      // Query DIDRegistered events for this address
+      const filter = this.didRegistryContract.filters.DIDRegistered(null, address);
+      const events = await this.didRegistryContract.queryFilter(filter, 0, 'latest');
+
+      if (events.length > 0) {
+        const event = events[0] as any;
+        return event.args?.did || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to get DID:', error);
+      return null;
+    }
+  }
+
   getProvider() {
     return this.provider;
   }

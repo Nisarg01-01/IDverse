@@ -1,18 +1,27 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import hre from "hardhat";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export default async function main({ ethers, network }) {
+async function main() {
   console.log("🚀 Starting IDverse Contract Deployment...\n");
-  console.log("Network:", network.name);
 
-  // Get signers
-  const [deployer] = await ethers.getSigners();
+  // Create a standard ethers provider
+  const { ethers } = await import("ethers");
+  const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+
+  // Get artifacts from hre
+  const artifacts = hre.artifacts;
+
+  console.log("Network: local (http://127.0.0.1:8545)");
+
+  // Get the first signer (deployer account)
+  const deployer = await provider.getSigner(0);
   console.log("📝 Deploying contracts with account:", deployer.address);
-  const balance = await ethers.provider.getBalance(deployer.address);
+  const balance = await provider.getBalance(deployer.address);
   console.log(
     "💰 Account balance:",
     ethers.formatEther(balance),
@@ -21,13 +30,27 @@ export default async function main({ ethers, network }) {
 
   // Deploy DIDRegistry
   console.log("📦 Deploying DIDRegistry...");
-  const didRegistry = await ethers.deployContract("DIDRegistry");
+  const DIDRegistryArtifact = await artifacts.readArtifact("DIDRegistry");
+  const DIDRegistryFactory = new ethers.ContractFactory(
+    DIDRegistryArtifact.abi,
+    DIDRegistryArtifact.bytecode,
+    deployer
+  );
+  const didRegistry = await DIDRegistryFactory.deploy();
+  await didRegistry.waitForDeployment();
   const didRegistryAddress = await didRegistry.getAddress();
   console.log("✅ DIDRegistry deployed to:", didRegistryAddress);
 
   // Deploy CredentialRegistry
   console.log("\n📦 Deploying CredentialRegistry...");
-  const credentialRegistry = await ethers.deployContract("CredentialRegistry");
+  const CredentialRegistryArtifact = await artifacts.readArtifact("CredentialRegistry");
+  const CredentialRegistryFactory = new ethers.ContractFactory(
+    CredentialRegistryArtifact.abi,
+    CredentialRegistryArtifact.bytecode,
+    deployer
+  );
+  const credentialRegistry = await CredentialRegistryFactory.deploy();
+  await credentialRegistry.waitForDeployment();
   const credentialRegistryAddress = await credentialRegistry.getAddress();
   console.log(
     "✅ CredentialRegistry deployed to:",
@@ -36,7 +59,14 @@ export default async function main({ ethers, network }) {
 
   // Deploy EventLogger
   console.log("\n📦 Deploying EventLogger...");
-  const eventLogger = await ethers.deployContract("EventLogger");
+  const EventLoggerArtifact = await artifacts.readArtifact("EventLogger");
+  const EventLoggerFactory = new ethers.ContractFactory(
+    EventLoggerArtifact.abi,
+    EventLoggerArtifact.bytecode,
+    deployer
+  );
+  const eventLogger = await EventLoggerFactory.deploy();
+  await eventLogger.waitForDeployment();
   const eventLoggerAddress = await eventLogger.getAddress();
   console.log("✅ EventLogger deployed to:", eventLoggerAddress);
 
@@ -147,9 +177,9 @@ export default async function main({ ethers, network }) {
 
   // Verify deployments
   console.log("\n🔍 Verifying deployments...");
-  const didCode = await ethers.provider.getCode(didRegistryAddress);
-  const credCode = await ethers.provider.getCode(credentialRegistryAddress);
-  const logCode = await ethers.provider.getCode(eventLoggerAddress);
+  const didCode = await provider.getCode(didRegistryAddress);
+  const credCode = await provider.getCode(credentialRegistryAddress);
+  const logCode = await provider.getCode(eventLoggerAddress);
 
   if (didCode === "0x" || credCode === "0x" || logCode === "0x") {
     console.error("❌ Deployment verification failed!");
@@ -163,14 +193,11 @@ export default async function main({ ethers, network }) {
   console.log("  3. Use the ABIs in your frontend application\n");
 }
 
-// If running directly, import hardhat and call main
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { default: hre } = await import("hardhat");
-  main(hre)
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error("\n❌ Deployment failed:");
-      console.error(error);
-      process.exit(1);
-    });
-}
+// Run the main function
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error("\n❌ Deployment failed:");
+    console.error(error);
+    process.exit(1);
+  });
