@@ -39,7 +39,8 @@ export default function IssuerPage() {
   const [credentialFilter, setCredentialFilter] = useState('');
 
   // Register DID tab state
-  const [didDocument, setDidDocument] = useState('');
+  const [didName, setDidName] = useState('');
+  const [docPointer, setDocPointer] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [hasDID, setHasDID] = useState<boolean | null>(null);
 
@@ -250,19 +251,17 @@ export default function IssuerPage() {
   // Handle DID registration
   const handleRegisterDID = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!didName.trim()) {
+      toastError('Please enter a DID identifier');
+      return;
+    }
     setIsRegistering(true);
     try {
-      const document = didDocument.trim() || JSON.stringify({
-        '@context': 'https://www.w3.org/ns/did/v1',
-        id: `did:idverse:${await web3Service.getAddress()}`,
-        created: new Date().toISOString(),
-        role: 'issuer',
-      });
-      
-      const { hash } = await web3Service.registerDID(document);
+      const { hash } = await web3Service.registerDID(didName.trim(), docPointer.trim());
       toastSuccess(`DID registered! TX: ${hash.slice(0, 10)}...`);
       setHasDID(true);
-      setDidDocument('');
+      setDidName('');
+      setDocPointer('');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to register DID';
       toastError(errorMessage);
@@ -678,17 +677,34 @@ export default function IssuerPage() {
                   <form onSubmit={handleRegisterDID} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-zinc-300 mb-2">
-                        DID Document (Optional)
+                        DID Identifier <span className="text-red-400">*</span>
                       </label>
-                      <textarea
-                        value={didDocument}
-                        onChange={(e) => setDidDocument(e.target.value)}
+                      <input
+                        type="text"
+                        value={didName}
+                        onChange={(e) => setDidName(e.target.value)}
                         className="w-full px-4 py-2 bg-zinc-950 border border-zinc-800 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent font-mono text-sm placeholder-zinc-600"
-                        rows={6}
-                        placeholder="Leave empty for auto-generated DID document"
+                        placeholder="e.g., did:idverse:issuer123"
+                        required
                       />
                       <p className="mt-1 text-xs text-zinc-500">
-                        A default DID document will be created if left empty
+                        Your unique decentralized identifier
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">
+                        Document URI (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={docPointer}
+                        onChange={(e) => setDocPointer(e.target.value)}
+                        className="w-full px-4 py-2 bg-zinc-950 border border-zinc-800 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent font-mono text-sm placeholder-zinc-600"
+                        placeholder="e.g., ipfs://QmYourDocumentHash or https://..."
+                      />
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Optional URI pointing to your DID document
                       </p>
                     </div>
 

@@ -1,185 +1,220 @@
 # IDverse - Decentralized Identity & Access Management
 
-## Project Description
+A production-ready blockchain-based decentralized identity management system built with Ethereum, IPFS, and React.
 
-IDverse is a blockchain-based decentralized identity management system that enables users to create, manage, and verify digital credentials without relying on centralized authorities. The system implements a complete workflow for:
+## Features
 
-- **Issuing Credentials**: Organizations can issue verifiable digital credentials stored on-chain
-- **Managing Identity**: Users control their own decentralized identifiers (DIDs)
-- **Verifying Credentials**: Third parties can verify credential authenticity with immutable audit trails
-- **Credential Revocation**: Issuers can revoke credentials with immediate on-chain status updates
+### Core Functionality
+- **Decentralized Identifiers (DIDs)**: Create and manage self-sovereign identities
+- **Verifiable Credentials**: Issue, hold, and verify digital credentials on-chain
+- **Credential Revocation**: Issuers can revoke credentials with immediate status updates
+- **Audit Trail**: Immutable verification logs on the blockchain
 
-## Platform
+### User Interfaces
+- **Issuer Dashboard**: Register DID, issue credentials using templates, view/revoke credentials
+- **Holder Dashboard**: Register DID, view held credentials, export to PDF, view verification history
+- **Verifier Dashboard**: Verify credentials, check IPFS integrity, log verifications
 
-**Ethereum Local Development Network (Hardhat)**
-- RPC Endpoint: `http://127.0.0.1:8545`
-- Chain ID: `31337`
-- Pre-funded Accounts: 20 accounts with 10,000 ETH each
-- Network Type: Local development blockchain for testing and demonstration
+### Production Features
+- Credential Templates (University Degree, Employment, Professional License, etc.)
+- PDF Export for credentials
+- Toast Notifications
+- Loading Skeletons
+- Error Boundary
+- Search & Filter for credentials
 
-## Technologies Used
+## Tech Stack
 
-### Blockchain & Smart Contracts
-- **Solidity**: v0.8.28 - Smart contract programming language
-- **Hardhat**: v3.0.11 - Ethereum development environment
-- **Ethers.js**: v6.15.0 - Web3 library for blockchain interaction
+| Category | Technology |
+|----------|------------|
+| Blockchain | Solidity 0.8.28, Hardhat 3.0.11 |
+| Web3 | Ethers.js 6.15.0 |
+| Frontend | React 18.3.1, Vite 7.2.4, TypeScript 5.6.2 |
+| Styling | Tailwind CSS 3.4.17 |
+| Storage | IPFS (Helia 6.0.11) |
+| Wallet | MetaMask |
+| PDF | jsPDF, html2canvas |
 
-### Frontend
-- **React**: v18.3.1 - UI framework
-- **Vite**: v7.2.4 - Build tool and development server
-- **TypeScript**: v5.6.2 - Type-safe JavaScript
-- **Tailwind CSS**: v3.4.17 - Utility-first CSS framework
+## Smart Contracts
 
-### Storage & Integration
-- **IPFS (Helia)**: v6.0.11 - Distributed credential storage with browser-native implementation
-- **MetaMask**: Wallet integration for transaction signing
+| Contract | Purpose |
+|----------|---------|
+| `DIDRegistry` | Manages decentralized identifiers |
+| `CredentialRegistry` | Handles credential lifecycle (issue, revoke, query) |
+| `EventLogger` | Records verification events and audit trail |
 
-### IPFS Integration
-The frontend uses Helia, a modern IPFS implementation, for decentralized credential storage:
-- Credentials are stored on IPFS before blockchain registration
-- Real CIDs are generated and linked to on-chain credentials
-- Data can be retrieved and verified from IPFS during verification
+---
 
-### Smart Contracts
-- **DIDRegistry**: Manages decentralized identifiers
-- **CredentialRegistry**: Handles credential lifecycle (issue, revoke, query)
-- **EventLogger**: Records verification events and audit trail
-
-## Steps for Local Deployment
+## Quick Start (Local Deployment)
 
 ### Prerequisites
 
-Install the following before proceeding:
-- Node.js (v18 or higher)
-- npm (v9 or higher)
-- MetaMask browser extension
-- Git
+- **Node.js** v18 or higher
+- **npm** v9 or higher
+- **MetaMask** browser extension
+- **Git**
 
-### 1. Clone and Install
+### Step 1: Clone & Install
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/Nisarg01-01/IDverse.git
 cd IDverse
 
-# Install backend dependencies
+# Install root dependencies
 npm install
 
 # Install frontend dependencies
 cd client
 npm install
 cd ..
-
-# Compile smart contracts
-npx hardhat compile
 ```
 
-### 2. Start Local Blockchain (Terminal 1)
+### Step 2: Start Local Blockchain
 
+Open **Terminal 1**:
 ```bash
 npx hardhat node
 ```
 
-**Expected Output:**
-```
-Started HTTP and WebSocket JSON-RPC server at http://127.0.0.1:8545/
+Keep this terminal running. You'll see 20 test accounts with 10,000 ETH each.
 
-Accounts
-========
-Account #0: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (10000 ETH)
-Private Key: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-...
-```
+### Step 3: Deploy Smart Contracts
 
-**Keep this terminal running throughout your session.**
-
-### 3. Deploy Smart Contracts (Terminal 2)
-
+Open **Terminal 2**:
 ```bash
 npx hardhat run scripts/deploy-local.ts --network localhost
 ```
 
-**Expected Output:**
+Expected output:
 ```
-DIDRegistry deployed to: 0x5FbDB2315678afecb367f032d93F642f64180aa3
-CredentialRegistry deployed to: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-EventLogger deployed to: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
-```
-
-### 4. Run Automated Pipeline Test (Optional)
-
-Verify the entire backend workflow (Register -> Issue -> Verify -> Revoke) with a single script:
-
-```bash
-npx hardhat run scripts/test-pipeline.ts --network localhost
+✅ DIDRegistry deployed to: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+✅ CredentialRegistry deployed to: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+✅ EventLogger deployed to: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
 ```
 
-### 5. Start Frontend (Terminal 3)
+### Step 4: Start Frontend
 
+Open **Terminal 3**:
 ```bash
 cd client
 npm run dev
 ```
 
-Open your browser to `http://localhost:5173` to interact with the application.
+Open http://localhost:5173 in your browser.
 
-### 4. Start Frontend Application (Terminal 3)
-
-```bash
-cd client
-npm run dev
-```
-
-**Expected Output:**
-```
-VITE v7.2.4  ready in 343 ms
-➜  Local:   http://localhost:5173/
-```
-
-### 5. Configure MetaMask
+### Step 5: Configure MetaMask
 
 **Add Hardhat Network:**
-1. Open MetaMask → Networks → Add Network
-2. Enter network details:
-   - Network Name: `Hardhat Local`
-   - RPC URL: `http://127.0.0.1:8545`
-   - Chain ID: `31337`
-   - Currency Symbol: `ETH`
-3. Save
+1. MetaMask → Settings → Networks → Add Network
+2. Fill in:
+   - **Network Name**: `Hardhat Local`
+   - **RPC URL**: `http://127.0.0.1:8545`
+   - **Chain ID**: `31337`
+   - **Currency Symbol**: `ETH`
 
 **Import Test Account:**
-1. Copy Account #0 private key from Terminal 1:
+1. Copy private key from Terminal 1:
    ```
    0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
    ```
-2. MetaMask → Import Account → Paste private key
-3. Switch to imported account and Hardhat Local network
+2. MetaMask → Account → Import Account → Paste key
+3. Switch to Hardhat Local network
 
-**You now have 10,000 ETH for testing.**
-
----
-
-## Verify Implementation
-
-See **VERIFICATION_GUIDE.md** for complete step-by-step demonstration of all implemented features:
-- Issuer workflow (Frontend UI)
-- Holder workflow (Console verification)
-- Verifier workflow (Console verification)
+You now have 10,000 ETH for testing!
 
 ---
 
-## Project Status
+## Usage Guide
 
-**Phase 1: Core Implementation - COMPLETE (70%)**
-- ✅ Smart contracts deployed and functional
-- ✅ Frontend application with wallet integration
-- ✅ Credential issuance workflow operational
-- ✅ All three roles (Issuer, Holder, Verifier) implemented
+### Issuer Workflow
+1. Connect wallet on home page
+2. Click **Issuer Dashboard** tab
+3. **Register DID** tab → Enter DID identifier → Click "Register DID"
+4. **Issue Credential** tab → Select template → Fill details → Click "Issue Credential"
+5. **Credentials** tab → View all issued credentials
+6. **Revoke** tab → Enter credential ID → Click "Revoke"
 
-**Phase 2: Planned (30%)**
-- ⏳ Complete UI for Holder and Verifier roles
-- ⏳ Full IPFS integration
-- ⏳ Advanced features and optimization
+### Holder Workflow
+1. Click **Holder Dashboard** tab
+2. Register your DID in "My Decentralized Identity" section
+3. Click "View All" in "My Credentials" to see your credentials
+4. Click on a credential to view details
+5. Use "Export PDF" to download credential
+6. View verification history with the history icon
+
+### Verifier Workflow
+1. Click **Verifier Dashboard** tab
+2. Enter Credential ID
+3. Click "Verify" to check validity
+4. View IPFS integrity check results
+5. Click "Log Verification" to record on blockchain
+
+---
+
+## Run Tests
+
+```bash
+# Run all smart contract tests (107 tests)
+npx hardhat test
+
+# Run with gas report
+REPORT_GAS=true npx hardhat test
+
+# Run specific test file
+npx hardhat test test/DIDRegistry.test.ts
+```
+
+---
+
+## Project Structure
+
+```
+IDverse/
+├── contracts/               # Solidity smart contracts
+│   ├── DIDRegistry.sol
+│   ├── CredentialRegistry.sol
+│   └── EventLogger.sol
+├── scripts/                 # Deployment scripts
+│   └── deploy-local.ts
+├── test/                    # Smart contract tests
+│   ├── DIDRegistry.test.ts
+│   ├── CredentialRegistry.test.ts
+│   ├── EventLogger.test.ts
+│   └── Integration.test.ts
+├── client/                  # React frontend
+│   ├── src/
+│   │   ├── components/      # Reusable components
+│   │   │   ├── Toast.tsx
+│   │   │   ├── Skeleton.tsx
+│   │   │   ├── ErrorBoundary.tsx
+│   │   │   └── WalletConnect.tsx
+│   │   ├── pages/           # Page components
+│   │   │   ├── IssuerPage.tsx
+│   │   │   ├── HolderPage.tsx
+│   │   │   └── VerifierPage.tsx
+│   │   ├── services/        # Web3 & IPFS services
+│   │   │   ├── web3.ts
+│   │   │   └── ipfs.ts
+│   │   ├── data/            # Static data
+│   │   │   └── credentialTemplates.ts
+│   │   └── App.tsx
+│   └── package.json
+├── hardhat.config.ts
+└── package.json
+```
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| MetaMask "Wrong Network" warning | Switch to Hardhat Local network (Chain ID 31337) |
+| "Nonce too high" error | Reset MetaMask account: Settings → Advanced → Clear activity |
+| Port 5173 in use | Frontend will auto-switch to 5174 |
+| IPFS not ready | Wait a few seconds for Helia to initialize |
+| Contract call fails | Ensure Hardhat node is running and contracts are deployed |
 
 ---
 
@@ -193,4 +228,4 @@ https://github.com/Nisarg01-01/IDverse
 
 ---
 
-**Note**: This project is for local development and educational purposes. Production deployment requires security audits and additional considerations.
+**Built with ❤️ using Ethereum, IPFS, React, and TypeScript**

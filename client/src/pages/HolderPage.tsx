@@ -42,7 +42,8 @@ export default function HolderPage() {
   
   // DID Registration state
   const [showDIDForm, setShowDIDForm] = useState(false);
-  const [didDocument, setDidDocument] = useState('');
+  const [didName, setDidName] = useState('');
+  const [docPointer, setDocPointer] = useState('');
   const [registeringDID, setRegisteringDID] = useState(false);
   const [didResult, setDidResult] = useState<{ success: boolean; message: string } | null>(null);
   const [hasDID, setHasDID] = useState<boolean | null>(null);
@@ -183,23 +184,21 @@ export default function HolderPage() {
 
   const handleRegisterDID = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!didName.trim()) {
+      toastError('Please enter a DID identifier');
+      return;
+    }
     setRegisteringDID(true);
     setDidResult(null);
 
     try {
-      const document = didDocument.trim() || JSON.stringify({
-        '@context': 'https://www.w3.org/ns/did/v1',
-        id: `did:idverse:${await web3Service.getAddress()}`,
-        created: new Date().toISOString(),
-        role: 'holder',
-      });
-      
-      const result = await web3Service.registerDID(document);
+      const result = await web3Service.registerDID(didName.trim(), docPointer.trim());
       setDidResult({
         success: true,
         message: `DID registered successfully! Transaction: ${result.hash}`
       });
-      setDidDocument('');
+      setDidName('');
+      setDocPointer('');
       setShowDIDForm(false);
       setHasDID(true);
       toastSuccess('DID registered successfully!');
@@ -382,14 +381,29 @@ export default function HolderPage() {
             {showDIDForm && !hasDID && (
               <form onSubmit={handleRegisterDID} className="space-y-4">
                 <div>
-                  <label className="block text-sm text-zinc-400 mb-1">DID Document (Optional)</label>
-                  <textarea
-                    value={didDocument}
-                    onChange={(e) => setDidDocument(e.target.value)}
+                  <label className="block text-sm text-zinc-400 mb-1">
+                    DID Identifier <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={didName}
+                    onChange={(e) => setDidName(e.target.value)}
                     className="w-full px-4 py-2 bg-zinc-900 border border-zinc-800 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent placeholder-zinc-600 font-mono text-sm"
-                    placeholder="Leave empty for auto-generated DID document"
-                    rows={4}
+                    placeholder="e.g., did:idverse:holder456"
+                    required
                   />
+                  <p className="mt-1 text-xs text-zinc-500">Your unique decentralized identifier</p>
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-1">Document URI (Optional)</label>
+                  <input
+                    type="text"
+                    value={docPointer}
+                    onChange={(e) => setDocPointer(e.target.value)}
+                    className="w-full px-4 py-2 bg-zinc-900 border border-zinc-800 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent placeholder-zinc-600 font-mono text-sm"
+                    placeholder="e.g., ipfs://QmYourDocumentHash"
+                  />
+                  <p className="mt-1 text-xs text-zinc-500">Optional URI pointing to your DID document</p>
                 </div>
                 <button
                   type="submit"
