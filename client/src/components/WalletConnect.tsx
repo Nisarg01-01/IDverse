@@ -29,19 +29,19 @@ export default function WalletConnect({ onWalletConnected }: WalletConnectProps)
       <button
         onClick={handleConnect}
         disabled={isConnecting}
-        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-lg hover:bg-zinc-200 disabled:bg-zinc-600 disabled:cursor-not-allowed transition-colors font-medium"
       >
         <Wallet size={20} />
         {isConnecting ? 'Connecting...' : 'Connect Wallet'}
       </button>
 
       {error && (
-        <div className="px-4 py-2 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+        <div className="px-4 py-2 bg-red-900/30 border border-red-800 text-red-400 rounded-lg">
           {error}
         </div>
       )}
 
-      <p className="text-sm text-gray-600 text-center max-w-md">
+      <p className="text-sm text-zinc-500 text-center max-w-md">
         Connect your MetaMask wallet to interact with IDverse contracts.
         Make sure you're on the local network (localhost:8545).
       </p>

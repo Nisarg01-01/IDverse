@@ -1,7 +1,5 @@
 import { expect } from "chai";
-import { network } from "hardhat";
-
-const { ethers } = await network.connect();
+import { ethers } from "hardhat";
 
 describe("Integration Tests", function () {
   let didRegistry: any;
@@ -17,8 +15,16 @@ describe("Integration Tests", function () {
 
     // Deploy all contracts
     didRegistry = await ethers.deployContract("DIDRegistry");
-    credentialRegistry = await ethers.deployContract("CredentialRegistry");
+    credentialRegistry = await ethers.deployContract("CredentialRegistry", [
+      await didRegistry.getAddress(),
+    ]);
     eventLogger = await ethers.deployContract("EventLogger");
+
+    // Register a DID for the issuer, as it's a prerequisite for issuing credentials.
+    const issuerDID = ethers.keccak256(ethers.toUtf8Bytes(issuer.address));
+    await didRegistry
+      .connect(issuer)
+      .registerDID(issuerDID, issuer.address, "ipfs://issuer-did-doc");
 
     // Setup EventLogger with authorized verifier
     await eventLogger.addAuthorizedVerifier(verifier.address);
@@ -67,10 +73,10 @@ describe("Integration Tests", function () {
       await expect(
         credentialRegistry
           .connect(issuer)
-          .issueCredential(credentialId, credentialHash, credentialCID)
+          .issueCredential(credentialId, holder.address, credentialHash, credentialCID)
       )
         .to.emit(credentialRegistry, "CredentialIssued")
-        .withArgs(credentialId, issuer.address, credentialHash, credentialCID);
+        .withArgs(credentialId, issuer.address, holder.address, credentialHash, credentialCID);
 
       // Verify credential is issued
       const credential = await credentialRegistry.getCredential(credentialId);
@@ -90,9 +96,7 @@ describe("Integration Tests", function () {
       // Verify the complete workflow state
       const verificationCount = await eventLogger.getVerificationCount(credentialId);
       expect(verificationCount).to.equal(1);
-
-      const accessLogCount = await eventLogger.getAccessLogCount();
-      expect(accessLogCount).to.equal(1);
+      // Access logs are tracked via events for gas efficiency
     });
 
     it("Should handle credential revocation workflow", async function () {
@@ -110,7 +114,7 @@ describe("Integration Tests", function () {
 
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, credentialCID);
+        .issueCredential(credentialId, holder.address, credentialHash, credentialCID);
 
       // Log initial verification
       await eventLogger.connect(verifier).logVerification(credentialId, true);
@@ -198,6 +202,7 @@ describe("Integration Tests", function () {
         .connect(issuer1)
         .issueCredential(
           degreeCred,
+          student.address,
           ethers.keccak256(ethers.toUtf8Bytes("degree_data")),
           "ipfs://QmDegree"
         );
@@ -206,6 +211,7 @@ describe("Integration Tests", function () {
         .connect(issuer2)
         .issueCredential(
           employmentCred,
+          student.address,
           ethers.keccak256(ethers.toUtf8Bytes("employment_data")),
           "ipfs://QmEmployment"
         );
@@ -247,6 +253,7 @@ describe("Integration Tests", function () {
         .connect(issuer)
         .issueCredential(
           credentialId,
+          holder.address,
           ethers.keccak256(ethers.toUtf8Bytes("data")),
           "ipfs://QmCred"
         );
@@ -276,12 +283,15 @@ describe("Integration Tests", function () {
       // Issue credential
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, "ipfs://QmAudit");
+        .issueCredential(credentialId, holder.address, credentialHash, "ipfs://QmAudit");
 
       // Multiple verifications
       await eventLogger.connect(verifier).logVerification(credentialId, true);
+      console.log("Count after 1:", await eventLogger.getVerificationCount(credentialId));
       await eventLogger.connect(verifier).logVerification(credentialId, true);
+      console.log("Count after 2:", await eventLogger.getVerificationCount(credentialId));
       await eventLogger.connect(verifier).logVerification(credentialId, true);
+      console.log("Count after 3:", await eventLogger.getVerificationCount(credentialId));
 
       // Multiple access attempts
       await eventLogger.connect(holder).logAccess(credentialId, true);
@@ -295,13 +305,12 @@ describe("Integration Tests", function () {
 
       // Access after revocation
       await eventLogger.connect(holder).logAccess(credentialId, false);
+      await eventLogger.connect(holder).logAccess(credentialId, false);
 
       // Verify complete audit trail
       const verificationCount = await eventLogger.getVerificationCount(credentialId);
       expect(verificationCount).to.equal(4); // 3 successful + 1 failed
-
-      const accessLogCount = await eventLogger.getAccessLogCount();
-      expect(accessLogCount).to.equal(4); // 2 successful + 2 failed
+      // Access logs are tracked via events for gas efficiency
 
       const credential = await credentialRegistry.getCredential(credentialId);
       expect(credential.revoked).to.equal(true);
@@ -329,7 +338,7 @@ describe("Integration Tests", function () {
       );
       await credentialRegistry
         .connect(issuer)
-        .issueCredential(credentialId, credentialHash, "ipfs://QmCred");
+        .issueCredential(credentialId, holder.address, credentialHash, "ipfs://QmCred");
 
       // Verify relationships
       const didController = await didRegistry.getController(holderDID);
@@ -394,6 +403,7 @@ describe("Integration Tests", function () {
         .connect(issuer)
         .issueCredential(
           credId,
+          holder.address,
           ethers.keccak256(ethers.toUtf8Bytes("gas_data")),
           "ipfs://QmGasCred"
         );

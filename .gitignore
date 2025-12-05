@@ -1,4 +1,5 @@
 # Node modules
+node_modules/
 /node_modules
 
 # Compilation output
@@ -8,12 +9,15 @@
 /bundle
 
 # Hardhat Build Artifacts
+artifacts/
 /artifacts
 
 # Hardhat compilation (v2) support directory
+cache/
 /cache
 
 # Typechain output
+typechain-types/
 /types
 
 # Hardhat coverage reports
@@ -21,3 +25,21 @@
 
 # dotenv environment variables file
 .env
+
+# Build outputs
+client/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Keep these markdown files local only
+DEVELOPMENT.md
+PRESENTATION_CONTENT.md
+VERIFICATION_GUIDE.md
+client/README.md

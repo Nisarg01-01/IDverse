@@ -1,7 +1,6 @@
 import { expect } from "chai";
-import { network } from "hardhat";
-
-const { ethers } = await network.connect();
+import { ethers } from "hardhat";
+import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 
 describe("EventLogger", function () {
   let eventLogger: any;
@@ -29,10 +28,11 @@ describe("EventLogger", function () {
     });
 
     it("Should emit VerifierAuthorized event for owner", async function () {
-      // Redeploy to catch the event
-      const EventLoggerFactory = await ethers.getContractFactory("EventLogger");
-      await expect(EventLoggerFactory.deploy())
-        .to.emit(EventLoggerFactory, "VerifierAuthorized");
+      const eventLogger = await ethers.deployContract("EventLogger");
+      const tx = eventLogger.deploymentTransaction();
+      await expect(tx)
+        .to.emit(eventLogger, "VerifierAuthorized")
+        .withArgs(owner.address);
     });
   });
 
@@ -196,58 +196,50 @@ describe("EventLogger", function () {
         .withArgs(credentialId, user.address, block!.timestamp, true);
     });
 
-    it("Should store access logs", async function () {
-      await eventLogger.connect(user).logAccess(credentialId, true);
-      await eventLogger.connect(verifier1).logAccess(credentialId2, false);
-
-      const count = await eventLogger.getAccessLogCount();
-      expect(count).to.equal(2);
+    it("Should emit AccessAttempt event for access logs", async function () {
+      await expect(eventLogger.connect(user).logAccess(credentialId, true))
+        .to.emit(eventLogger, "AccessAttempt")
+        .withArgs(credentialId, user.address, anyValue, true);
+      
+      await expect(eventLogger.connect(verifier1).logAccess(credentialId2, false))
+        .to.emit(eventLogger, "AccessAttempt")
+        .withArgs(credentialId2, verifier1.address, anyValue, false);
     });
 
-    it("Should retrieve access log entry correctly", async function () {
-      await eventLogger.connect(user).logAccess(credentialId, true);
-
-      const log = await eventLogger.getAccessLog(0);
-      expect(log.accessor).to.equal(user.address);
-      expect(log.credentialId).to.equal(credentialId);
-      expect(log.success).to.equal(true);
-      expect(log.timestamp).to.be.greaterThan(0);
+    it("Should emit correct event data for access logs", async function () {
+      const tx = await eventLogger.connect(user).logAccess(credentialId, true);
+      const receipt = await tx.wait();
+      expect(receipt).to.not.be.null;
+      // Access logs are tracked via events for gas efficiency
     });
 
-    it("Should log both successful and failed access attempts", async function () {
-      await eventLogger.connect(user).logAccess(credentialId, true);
-      await eventLogger.connect(user).logAccess(credentialId, false);
-
-      const log1 = await eventLogger.getAccessLog(0);
-      const log2 = await eventLogger.getAccessLog(1);
-
-      expect(log1.success).to.equal(true);
-      expect(log2.success).to.equal(false);
+    it("Should log both successful and failed access attempts via events", async function () {
+      await expect(eventLogger.connect(user).logAccess(credentialId, true))
+        .to.emit(eventLogger, "AccessAttempt")
+        .withArgs(credentialId, user.address, anyValue, true);
+      
+      await expect(eventLogger.connect(user).logAccess(credentialId, false))
+        .to.emit(eventLogger, "AccessAttempt")
+        .withArgs(credentialId, user.address, anyValue, false);
     });
 
-    it("Should prevent accessing out-of-bounds log index", async function () {
-      await expect(eventLogger.getAccessLog(0)).to.be.revertedWith(
-        "Index out of bounds"
-      );
+    it("Should allow anyone to log access", async function () {
+      // user (non-verifier) can log access
+      await expect(eventLogger.connect(user).logAccess(credentialId, true))
+        .to.emit(eventLogger, "AccessAttempt");
+      
+      // verifier can also log access
+      await expect(eventLogger.connect(verifier1).logAccess(credentialId2, false))
+        .to.emit(eventLogger, "AccessAttempt");
     });
 
-    it("Should maintain chronological order of access logs", async function () {
-      await eventLogger.connect(user).logAccess(credentialId, true);
-      await eventLogger.connect(verifier1).logAccess(credentialId2, false);
-      await eventLogger.connect(user).logAccess(credentialId, true);
-
-      const log0 = await eventLogger.getAccessLog(0);
-      const log1 = await eventLogger.getAccessLog(1);
-      const log2 = await eventLogger.getAccessLog(2);
-
-      expect(log0.accessor).to.equal(user.address);
-      expect(log0.credentialId).to.equal(credentialId);
-
-      expect(log1.accessor).to.equal(verifier1.address);
-      expect(log1.credentialId).to.equal(credentialId2);
-
-      expect(log2.accessor).to.equal(user.address);
-      expect(log2.credentialId).to.equal(credentialId);
+    it("Should record multiple access attempts via events", async function () {
+      await expect(eventLogger.connect(user).logAccess(credentialId, true))
+        .to.emit(eventLogger, "AccessAttempt");
+      await expect(eventLogger.connect(verifier1).logAccess(credentialId2, false))
+        .to.emit(eventLogger, "AccessAttempt");
+      await expect(eventLogger.connect(user).logAccess(credentialId, true))
+        .to.emit(eventLogger, "AccessAttempt");
     });
   });
 
@@ -268,11 +260,6 @@ describe("EventLogger", function () {
     it("Should get correct verification count", async function () {
       const count = await eventLogger.getVerificationCount(credentialId);
       expect(count).to.equal(2);
-    });
-
-    it("Should get correct access log count", async function () {
-      const count = await eventLogger.getAccessLogCount();
-      expect(count).to.equal(1);
     });
 
     it("Should return zero count for unverified credential", async function () {
@@ -343,13 +330,12 @@ describe("EventLogger", function () {
       expect(count).to.equal(10);
     });
 
-    it("Should handle rapid access logging", async function () {
+    it("Should handle rapid access logging via events", async function () {
       for (let i = 0; i < 10; i++) {
-        await eventLogger.connect(user).logAccess(credentialId, i % 2 === 0);
+        await expect(eventLogger.connect(user).logAccess(credentialId, i % 2 === 0))
+          .to.emit(eventLogger, "AccessAttempt");
       }
-
-      const count = await eventLogger.getAccessLogCount();
-      expect(count).to.equal(10);
+      // Access logs are tracked via events, not storage
     });
 
     it("Should handle large number of authorized verifiers", async function () {

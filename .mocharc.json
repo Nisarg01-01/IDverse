@@ -1,0 +1,8 @@
+{
+  "require": ["tsx/esm"],
+  "loader": "tsx",
+  "extensions": ["ts"],
+  "spec": ["test/**/*.test.ts"],
+  "timeout": 40000,
+  "node-option": ["import=tsx/esm"]
+}
