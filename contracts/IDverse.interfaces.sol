@@ -9,6 +9,7 @@ interface IDIDRegistry {
     function updateDocPointer(bytes32 did, string calldata pointer) external;
     function getController(bytes32 did) external view returns (address);
     function getDocPointer(bytes32 did) external view returns (string memory);
+    function isController(address) external view returns (bool);
 }
 
 interface ICredentialRegistry {

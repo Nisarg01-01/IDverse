@@ -3,6 +3,7 @@ import { ethers } from "hardhat";
 
 describe("CredentialRegistry", function () {
   let credentialRegistry: any;
+  let didRegistry: any;
   let owner: any;
   let issuer: any;
   let holder: any;
@@ -20,7 +21,21 @@ describe("CredentialRegistry", function () {
   beforeEach(async function () {
     [owner, issuer, holder, verifier] = await ethers.getSigners();
 
-    credentialRegistry = await ethers.deployContract("CredentialRegistry");
+    didRegistry = await ethers.deployContract("DIDRegistry");
+    credentialRegistry = await ethers.deployContract("CredentialRegistry", [
+      await didRegistry.getAddress(),
+    ]);
+
+    // Register DIDs for accounts that will act as issuers
+    const issuerDid = ethers.keccak256(ethers.toUtf8Bytes(issuer.address));
+    await didRegistry
+      .connect(issuer)
+      .registerDID(issuerDid, issuer.address, "ipfs://issuer-did-doc");
+
+    const holderDid = ethers.keccak256(ethers.toUtf8Bytes(holder.address));
+    await didRegistry
+      .connect(holder)
+      .registerDID(holderDid, holder.address, "ipfs://holder-did-doc");
   });
 
   describe("Credential Issuance", function () {

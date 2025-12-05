@@ -26,11 +26,8 @@ import type {
 export interface EventLoggerInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "accessLogs"
       | "addAuthorizedVerifier"
       | "authorizedVerifiers"
-      | "getAccessLog"
-      | "getAccessLogCount"
       | "getVerificationCount"
       | "getVerificationHistory"
       | "isAuthorizedVerifier"
@@ -51,24 +48,12 @@ export interface EventLoggerInterface extends Interface {
   ): EventFragment;
 
   encodeFunctionData(
-    functionFragment: "accessLogs",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "addAuthorizedVerifier",
     values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "authorizedVerifiers",
     values: [AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "getAccessLog",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "getAccessLogCount",
-    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "getVerificationCount",
@@ -104,21 +89,12 @@ export interface EventLoggerInterface extends Interface {
     values: [BytesLike, BigNumberish]
   ): string;
 
-  decodeFunctionResult(functionFragment: "accessLogs", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "addAuthorizedVerifier",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "authorizedVerifiers",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "getAccessLog",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "getAccessLogCount",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -270,19 +246,6 @@ export interface EventLogger extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  accessLogs: TypedContractMethod<
-    [arg0: BigNumberish],
-    [
-      [string, string, bigint, boolean] & {
-        accessor: string;
-        credentialId: string;
-        timestamp: bigint;
-        success: boolean;
-      }
-    ],
-    "view"
-  >;
-
   addAuthorizedVerifier: TypedContractMethod<
     [verifier: AddressLike],
     [void],
@@ -294,21 +257,6 @@ export interface EventLogger extends BaseContract {
     [boolean],
     "view"
   >;
-
-  getAccessLog: TypedContractMethod<
-    [index: BigNumberish],
-    [
-      [string, string, bigint, boolean] & {
-        accessor: string;
-        credentialId: string;
-        timestamp: bigint;
-        success: boolean;
-      }
-    ],
-    "view"
-  >;
-
-  getAccessLogCount: TypedContractMethod<[], [bigint], "view">;
 
   getVerificationCount: TypedContractMethod<
     [credentialId: BytesLike],
@@ -365,42 +313,11 @@ export interface EventLogger extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "accessLogs"
-  ): TypedContractMethod<
-    [arg0: BigNumberish],
-    [
-      [string, string, bigint, boolean] & {
-        accessor: string;
-        credentialId: string;
-        timestamp: bigint;
-        success: boolean;
-      }
-    ],
-    "view"
-  >;
-  getFunction(
     nameOrSignature: "addAuthorizedVerifier"
   ): TypedContractMethod<[verifier: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "authorizedVerifiers"
   ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
-  getFunction(
-    nameOrSignature: "getAccessLog"
-  ): TypedContractMethod<
-    [index: BigNumberish],
-    [
-      [string, string, bigint, boolean] & {
-        accessor: string;
-        credentialId: string;
-        timestamp: bigint;
-        success: boolean;
-      }
-    ],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "getAccessLogCount"
-  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "getVerificationCount"
   ): TypedContractMethod<[credentialId: BytesLike], [bigint], "view">;

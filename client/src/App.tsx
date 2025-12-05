@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { type WalletState } from './services/web3';
+import { useState, useEffect } from 'react';
+import { type WalletState, web3Service } from './services/web3';
 import WalletConnect from './components/WalletConnect';
 import IssuerPage from './pages/IssuerPage';
 import VerifierPage from './pages/VerifierPage';
@@ -12,11 +12,39 @@ function AppContent() {
   const [wallet, setWallet] = useState<WalletState | null>(null);
   const [activeTab, setActiveTab] = useState<'issuer' | 'holder' | 'verifier'>('issuer');
 
+  useEffect(() => {
+    const handleAccountsChanged = async (accounts: string[]) => {
+      if (accounts.length === 0) {
+        // MetaMask is locked or the user has disconnected all accounts
+        setWallet(null);
+      } else if (wallet?.isConnected) {
+        // If wallet is already connected, reconnect to update to the new account
+        try {
+          const walletState = await web3Service.connectWallet();
+          setWallet(walletState);
+        } catch (error) {
+          console.error("Failed to reconnect on account change:", error);
+          setWallet(null);
+        }
+      }
+    };
+
+    if (typeof window.ethereum !== 'undefined') {
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+    }
+
+    return () => {
+      if (typeof window.ethereum !== 'undefined') {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      }
+    };
+  }, [wallet?.isConnected]); // Rerun effect if connection state changes
+
   return (
     <div className="min-h-screen bg-black text-zinc-100">
       {/* Header */}
       <header className="bg-zinc-900 border-b border-zinc-800">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+        <div className="w-full px-6 py-4 lg:px-12">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
@@ -52,7 +80,7 @@ function AppContent() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <main className="w-full px-6 py-8 lg:px-12">
         {!wallet?.isConnected ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh]">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-xl p-12 max-w-md w-full">
@@ -103,7 +131,7 @@ function AppContent() {
             </div>
           </div>
         ) : (
-          <div>
+          <div className="w-full">
             <div className="flex justify-center mb-8">
               <div className="bg-zinc-900 rounded-lg p-1 inline-flex border border-zinc-800">
                 <button
@@ -139,9 +167,11 @@ function AppContent() {
               </div>
             </div>
 
-            {activeTab === 'issuer' && <IssuerPage />}
-            {activeTab === 'holder' && <HolderPage />}
-            {activeTab === 'verifier' && <VerifierPage />}
+            <div className="w-full">
+              {activeTab === 'issuer' && <IssuerPage />}
+              {activeTab === 'holder' && <HolderPage />}
+              {activeTab === 'verifier' && <VerifierPage />}
+            </div>
           </div>
         )}
       </main>

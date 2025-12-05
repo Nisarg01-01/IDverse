@@ -19,7 +19,7 @@ async function main() {
 
   // Deploy CredentialRegistry
   const CredentialRegistry = await ethers.getContractFactory("CredentialRegistry");
-  const credentialRegistry = await CredentialRegistry.deploy();
+  const credentialRegistry = await CredentialRegistry.deploy(didRegistryAddress);
   await credentialRegistry.waitForDeployment();
   const credentialRegistryAddress = await credentialRegistry.getAddress();
   console.log("CredentialRegistry deployed to:", credentialRegistryAddress);

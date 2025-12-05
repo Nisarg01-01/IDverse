@@ -21,9 +21,11 @@ const CREDENTIAL_REGISTRY_ABI = [
 ];
 
 const EVENT_LOGGER_ABI = [
+  'function addAuthorizedVerifier(address verifier) external',
   'function logVerification(bytes32 credentialId, bool result) external',
   'function logAccess(bytes32 credentialId, bool success) external',
   'function getVerificationCount(bytes32 credentialId) external view returns (uint256)',
+  'function getVerificationHistory(bytes32 credentialId) external view returns (uint256[])',
   'event CredentialVerified(bytes32 indexed credentialId, address indexed verifier, uint256 timestamp, bool result)',
 ];
 
@@ -97,6 +99,20 @@ class Web3Service {
     );
   }
 
+  private async _toCredentialIdBytes(credentialId: string): Promise<string> {
+    if (!this.provider) {
+      throw new Error('Provider not initialized');
+    }
+    // Return if it's already a bytes32 hash
+    if (credentialId.startsWith('0x') && credentialId.length === 66) {
+      return credentialId;
+    }
+    const encoder = new TextEncoder();
+    return await this.provider.send('web3_sha3', [
+      '0x' + Array.from(encoder.encode(credentialId)).map(b => b.toString(16).padStart(2, '0')).join('')
+    ]);
+  }
+
   /**
    * Get the current wallet address
    */
@@ -140,19 +156,39 @@ class Web3Service {
     }
 
     try {
-      let credIdBytes = credentialId;
-      if (!credentialId.startsWith('0x')) {
-        const encoder = new TextEncoder();
-        credIdBytes = await this.provider!.send('web3_sha3', [
-          '0x' + Array.from(encoder.encode(credentialId)).map(b => b.toString(16).padStart(2, '0')).join('')
-        ]);
-      }
+      const credIdBytes = await this._toCredentialIdBytes(credentialId);
 
       const count = await this.eventLoggerContract.getVerificationCount(credIdBytes);
       return Number(count);
     } catch (error) {
       console.error('Failed to get verification count:', error);
       return 0;
+    }
+  }
+
+  /**
+   * Get verification history for a credential from events
+   */
+  async getVerificationHistory(credentialId: string): Promise<Array<{verifier: string, timestamp: number, result: boolean}>> {
+    if (!this.eventLoggerContract || !this.provider) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      const credIdBytes = await this._toCredentialIdBytes(credentialId);
+      
+      // Query CredentialVerified events for this credential
+      const filter = this.eventLoggerContract.filters.CredentialVerified(credIdBytes);
+      const events = await this.eventLoggerContract.queryFilter(filter, 0, 'latest');
+      
+      return events.map((event: any) => ({
+        verifier: event.args[1],
+        timestamp: Number(event.args[2]) * 1000, // Convert to milliseconds
+        result: event.args[3]
+      }));
+    } catch (error) {
+      console.error('Failed to get verification history:', error);
+      return [];
     }
   }
 
@@ -178,9 +214,7 @@ class Web3Service {
       ]);
 
       // Convert credentialId to bytes32
-      const credIdBytes = await this.provider!.send('web3_sha3', [
-        '0x' + Array.from(encoder.encode(credentialId)).map(b => b.toString(16).padStart(2, '0')).join('')
-      ]);
+      const credIdBytes = await this._toCredentialIdBytes(credentialId);
 
       const tx = await this.credentialRegistryContract.issueCredential(
         credIdBytes,
@@ -203,17 +237,28 @@ class Web3Service {
     }
 
     try {
-      // Convert credentialId to bytes32 if it's not already
-      let credIdBytes = credentialId;
-      if (!credentialId.startsWith('0x')) {
-         const encoder = new TextEncoder();
-         credIdBytes = await this.provider!.send('web3_sha3', [
-          '0x' + Array.from(encoder.encode(credentialId)).map(b => b.toString(16).padStart(2, '0')).join('')
-        ]);
-      }
+      const credIdBytes = await this._toCredentialIdBytes(credentialId);
 
       const credential = await this.credentialRegistryContract.getCredential(credIdBytes);
+      
+      // Check if credential exists (issuer is zero address means it doesn't exist)
+      const issuer = credential[0];
+      const isZeroAddress = issuer === '0x0000000000000000000000000000000000000000';
+      
+      if (isZeroAddress) {
+        return {
+          exists: false,
+          issuer: '',
+          holder: '',
+          credentialHash: '',
+          cid: '',
+          issuedAt: null,
+          revoked: false,
+        };
+      }
+      
       return {
+        exists: true,
         issuer: credential[0],
         holder: credential[1],
         credentialHash: credential[2],
@@ -233,14 +278,7 @@ class Web3Service {
     }
 
     try {
-      // Convert credentialId to bytes32 if it's not already
-      let credIdBytes = credentialId;
-      if (!credentialId.startsWith('0x')) {
-         const encoder = new TextEncoder();
-         credIdBytes = await this.provider!.send('web3_sha3', [
-          '0x' + Array.from(encoder.encode(credentialId)).map(b => b.toString(16).padStart(2, '0')).join('')
-        ]);
-      }
+      const credIdBytes = await this._toCredentialIdBytes(credentialId);
 
       const tx = await this.eventLoggerContract.logAccess(credIdBytes, true);
       await tx.wait();
@@ -257,14 +295,7 @@ class Web3Service {
     }
 
     try {
-      // Convert credentialId to bytes32 if it's not already
-      let credIdBytes = credentialId;
-      if (!credentialId.startsWith('0x')) {
-         const encoder = new TextEncoder();
-         credIdBytes = await this.provider!.send('web3_sha3', [
-          '0x' + Array.from(encoder.encode(credentialId)).map(b => b.toString(16).padStart(2, '0')).join('')
-        ]);
-      }
+      const credIdBytes = await this._toCredentialIdBytes(credentialId);
 
       const tx = await this.eventLoggerContract.logVerification(credIdBytes, isValid);
       await tx.wait();
@@ -284,13 +315,7 @@ class Web3Service {
     }
 
     try {
-      let credIdBytes = credentialId;
-      if (!credentialId.startsWith('0x')) {
-        const encoder = new TextEncoder();
-        credIdBytes = await this.provider!.send('web3_sha3', [
-          '0x' + Array.from(encoder.encode(credentialId)).map(b => b.toString(16).padStart(2, '0')).join('')
-        ]);
-      }
+      const credIdBytes = await this._toCredentialIdBytes(credentialId);
 
       const tx = await this.credentialRegistryContract.revokeCredential(credIdBytes);
       const receipt = await tx.wait();

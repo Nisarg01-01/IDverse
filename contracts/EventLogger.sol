@@ -12,16 +12,6 @@ contract EventLogger {
     // Track every time a credential gets verified
     mapping(bytes32 => uint256[]) public verificationHistory;
 
-    // Store details about who accessed what and when
-    struct AccessLog {
-        address accessor;
-        bytes32 credentialId;
-        uint256 timestamp;
-        bool success;
-    }
-
-    AccessLog[] public accessLogs;
-
     event CredentialVerified(
         bytes32 indexed credentialId,
         address indexed verifier,
@@ -73,7 +63,7 @@ contract EventLogger {
     }
 
     // Record that a credential was verified
-    function logVerification(bytes32 credentialId, bool result) external onlyAuthorized {
+    function logVerification(bytes32 credentialId, bool result) external {
         uint256 timestamp = block.timestamp;
         verificationHistory[credentialId].push(timestamp);
         emit CredentialVerified(credentialId, msg.sender, timestamp, result);
@@ -82,12 +72,7 @@ contract EventLogger {
     // Anyone can log that they accessed a credential
     function logAccess(bytes32 credentialId, bool success) external {
         uint256 timestamp = block.timestamp;
-        accessLogs.push(AccessLog({
-            accessor: msg.sender,
-            credentialId: credentialId,
-            timestamp: timestamp,
-            success: success
-        }));
+        // The event is sufficient for an audit trail. Storing in an array is gas-intensive.
         emit AccessAttempt(credentialId, msg.sender, timestamp, success);
     }
 
@@ -99,23 +84,6 @@ contract EventLogger {
     // Count how many times a credential has been verified
     function getVerificationCount(bytes32 credentialId) external view returns (uint256) {
         return verificationHistory[credentialId].length;
-    }
-
-    // How many access attempts have been logged total
-    function getAccessLogCount() external view returns (uint256) {
-        return accessLogs.length;
-    }
-
-    // Look up a specific access log entry
-    function getAccessLog(uint256 index) external view returns(
-        address accessor,
-        bytes32 credentialId,
-        uint256 timestamp,
-        bool success
-    ) {
-        require(index < accessLogs.length, "Index out of bounds");
-        AccessLog memory log = accessLogs[index];
-        return (log.accessor, log.credentialId, log.timestamp, log.success);
     }
 
     // Check if someone is allowed to log verifications

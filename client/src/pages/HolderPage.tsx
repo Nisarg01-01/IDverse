@@ -107,22 +107,21 @@ export default function HolderPage() {
   // Load verification history for a credential
   const loadVerificationHistory = async (credId: string) => {
     try {
-      // In a real implementation, this would query events
-      // For now, we'll simulate it
-      const count = await web3Service.getVerificationCount(credId);
-      // Create mock history based on count
-      const history: VerificationHistoryItem[] = [];
-      for (let i = 0; i < count; i++) {
-        history.push({
-          credentialId: credId,
-          verifier: '0x' + Math.random().toString(16).slice(2, 42),
-          timestamp: Date.now() - (i * 86400000), // Subtract days
-        });
-      }
-      setVerificationHistory(history);
+      // Query actual verification events from blockchain
+      const history = await web3Service.getVerificationHistory(credId);
+      setVerificationHistory(history.map(h => ({
+        credentialId: credId,
+        verifier: h.verifier,
+        timestamp: h.timestamp,
+      })));
       setShowHistory(true);
+      
+      if (history.length === 0) {
+        toastWarning('No verification history found for this credential');
+      }
     } catch (error) {
       console.error('Failed to load verification history:', error);
+      toastError('Failed to load verification history');
     }
   };
 
@@ -329,7 +328,7 @@ export default function HolderPage() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="w-full">
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg overflow-hidden">
         <div className="p-8 border-b border-zinc-800">
           <div className="flex items-center justify-between">

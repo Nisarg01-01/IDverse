@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import "./IDverse.interfaces.sol";
+
 // Simple DID registry for managing decentralized identifiers
 // We keep personal info off-chain and only store references here
-contract DIDRegistry {
+contract DIDRegistry is IDIDRegistry {
     // Maps each DID to its controller (the address that owns it)
     mapping(bytes32 => address) public controller;
     // Points to where the full DID document lives (usually IPFS)
     mapping(bytes32 => string) public docPointer;
+    // Quick lookup to see if an address is a controller for any DID
+    mapping(address => bool) public override isController;
 
     event DIDRegistered(bytes32 indexed did, address indexed controller, string docPointer);
     event ControllerChanged(bytes32 indexed did, address indexed previous, address indexed current);
@@ -16,16 +20,25 @@ contract DIDRegistry {
     // Register a new DID - anyone can create one for themselves or others
     function registerDID(bytes32 did, address controllerAddr, string calldata pointer) external {
         require(controller[did] == address(0), "DID already registered");
+        require(controllerAddr != address(0), "Controller cannot be zero address");
+
         controller[did] = controllerAddr;
         docPointer[did] = pointer;
+        isController[controllerAddr] = true;
+
         emit DIDRegistered(did, controllerAddr, pointer);
     }
 
     // Transfer control of a DID to a new address
     function updateController(bytes32 did, address newController) external {
-        require(controller[did] == msg.sender, "only controller");
         address previous = controller[did];
+        require(previous == msg.sender, "only controller");
+        require(newController != address(0), "Controller cannot be zero address");
+
         controller[did] = newController;
+        isController[previous] = false;
+        isController[newController] = true;
+
         emit ControllerChanged(did, previous, newController);
     }
 
@@ -49,6 +62,12 @@ contract DIDRegistry {
 
 // Manages the lifecycle of verifiable credentials
 contract CredentialRegistry {
+    IDIDRegistry public didRegistry;
+
+    constructor(address didRegistryAddress) {
+        didRegistry = IDIDRegistry(didRegistryAddress);
+    }
+
     // Everything we need to track about a credential
     struct Credential {
         address issuer;
@@ -67,8 +86,11 @@ contract CredentialRegistry {
 
     /// @notice Issuers call this to register an issued credential anchor
     function issueCredential(bytes32 credentialId, address holder, bytes32 credentialHash, string calldata cid) external {
+        require(didRegistry.isController(msg.sender), "Issuer must have a registered DID");
+
         Credential storage c = credentials[credentialId];
         require(c.issuer == address(0), "credential exists");
+
         c.issuer = msg.sender;
         c.holder = holder;
         c.credentialHash = credentialHash;

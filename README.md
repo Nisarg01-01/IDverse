@@ -148,7 +148,49 @@ You now have 10,000 ETH for testing!
 2. Enter Credential ID
 3. Click "Verify" to check validity
 4. View IPFS integrity check results
-5. Click "Log Verification" to record on blockchain
+5. A successful verification is automatically recorded on the blockchain.
+
+---
+
+### Testing the Full End-to-End Flow (Multi-Account)
+
+To accurately test the separation of roles between an Issuer, a Holder, and a Verifier, you should use three distinct accounts. The application is now set up to automatically detect account changes in MetaMask.
+
+**1. Create Additional Accounts in MetaMask:**
+
+If you only have one account, create two more:
+- Open MetaMask, click the account icon (top-right), and select **"Create account"**.
+- Name one "Holder" and the other "Verifier" for clarity.
+
+**2. Import Hardhat Test Accounts:**
+
+For a clean testing environment, import the pre-funded accounts from your local Hardhat node into MetaMask:
+- In the terminal running `npx hardhat node`, copy the private keys for **Account #1**, **Account #2**, and **Account #3**.
+- In MetaMask, click the account icon → **"Add account or hardware wallet"** → **"Import account"**.
+- Paste a private key and click **"Import"**.
+- Repeat for all three accounts. Rename them to **"Issuer"**, **"Holder"**, and **"Verifier"** respectively.
+
+**3. Execute the Test Flow:**
+
+- **Act as the Issuer:**
+    - Select the **"Issuer"** account in MetaMask.
+    - Connect your wallet in the IDverse app.
+    - Navigate to the **"Issuer Dashboard"** and first **register a DID** for this account.
+    - Now, issue a new credential. For the **Holder Address**, paste the address of your **"Holder"** account.
+    - Approve the transaction.
+
+- **Act as the Holder:**
+    - Switch your active account in MetaMask to **"Holder"**.
+    - The IDverse app will automatically refresh with the new account's context.
+    - Navigate to the **"Holder Dashboard"**. The credential you just issued should be visible. Note its ID.
+
+- **Act as the Verifier:**
+    - Switch your active account in MetaMask to **"Verifier"**.
+    - The app will refresh again.
+    - Navigate to the **"Verifier Dashboard"**.
+    - Enter the **Credential ID** from the previous step and click **"Verify"**. The credential details should be displayed.
+
+This process confirms that the entire lifecycle—from issuance to verification with distinct parties—is working correctly.
 
 ---
 
@@ -157,12 +199,6 @@ You now have 10,000 ETH for testing!
 ```bash
 # Run all smart contract tests (107 tests)
 npx hardhat test
-
-# Run with gas report
-REPORT_GAS=true npx hardhat test
-
-# Run specific test file
-npx hardhat test test/DIDRegistry.test.ts
 ```
 
 ---

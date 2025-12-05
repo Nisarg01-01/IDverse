@@ -29,6 +29,7 @@ export interface DIDRegistryInterface extends Interface {
       | "docPointer"
       | "getController"
       | "getDocPointer"
+      | "isController"
       | "registerDID"
       | "updateController"
       | "updateDocPointer"
@@ -58,6 +59,10 @@ export interface DIDRegistryInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "isController",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "registerDID",
     values: [BytesLike, AddressLike, string]
   ): string;
@@ -78,6 +83,10 @@ export interface DIDRegistryInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getDocPointer",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "isController",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -198,6 +207,8 @@ export interface DIDRegistry extends BaseContract {
 
   getDocPointer: TypedContractMethod<[did: BytesLike], [string], "view">;
 
+  isController: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+
   registerDID: TypedContractMethod<
     [did: BytesLike, controllerAddr: AddressLike, pointer: string],
     [void],
@@ -232,6 +243,9 @@ export interface DIDRegistry extends BaseContract {
   getFunction(
     nameOrSignature: "getDocPointer"
   ): TypedContractMethod<[did: BytesLike], [string], "view">;
+  getFunction(
+    nameOrSignature: "isController"
+  ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
   getFunction(
     nameOrSignature: "registerDID"
   ): TypedContractMethod<

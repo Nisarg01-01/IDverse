@@ -5,11 +5,12 @@ import { Search, CheckCircle, XCircle, Loader2, Database, ClipboardCheck, Shield
 import { useToast } from '../components/Toast';
 
 interface CredentialResult {
+  exists: boolean;
   issuer: string;
   holder: string;
   credentialHash: string;
   cid: string;
-  issuedAt: Date;
+  issuedAt: Date | null;
   revoked: boolean;
 }
 
@@ -41,6 +42,13 @@ export default function VerifierPage() {
     initIPFS();
   }, []);
 
+  // Automatically log verification when a valid result is fetched
+  useEffect(() => {
+    if (result && result.exists && !result.revoked && !verificationLogged) {
+      handleLogVerification(true);
+    }
+  }, [result]);
+
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsVerifying(true);
@@ -53,25 +61,37 @@ export default function VerifierPage() {
     try {
       // Fetch from blockchain
       const data = await web3Service.getCredential(credentialId);
+      
+      // Check if credential exists
+      if (!data.exists) {
+        setError('Credential not found. This credential ID has not been issued.');
+        toastError('Credential not found');
+        setIsVerifying(false);
+        return;
+      }
+      
       setResult(data as CredentialResult);
 
-      // Try to fetch and verify from IPFS
+      // Try to fetch and verify from IPFS (with timeout)
       if (data.cid && ipfsStatus === 'ready') {
         setFetchingIpfs(true);
         try {
           const ipfsCredential = await ipfsService.getCredential(data.cid);
-          setIpfsData(ipfsCredential);
           
-          // Verify IPFS data matches blockchain data
           if (ipfsCredential) {
+            setIpfsData(ipfsCredential);
+            // Verify IPFS data matches blockchain data
             const issuerMatch = ipfsCredential.issuer.toLowerCase() === data.issuer.toLowerCase();
             const holderMatch = ipfsCredential.holder.toLowerCase() === data.holder.toLowerCase();
             const idMatch = ipfsCredential.credentialId === credentialId;
             setIpfsVerified(issuerMatch && holderMatch && idMatch);
+          } else {
+            // IPFS data not available (timeout or not found)
+            setIpfsVerified(null);
           }
         } catch (ipfsErr) {
           console.warn('Could not verify from IPFS:', ipfsErr);
-          setIpfsVerified(false);
+          setIpfsVerified(null);
         } finally {
           setFetchingIpfs(false);
         }
@@ -101,7 +121,7 @@ export default function VerifierPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="w-full">
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -179,27 +199,19 @@ export default function VerifierPage() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-zinc-400">
-                  Issued: {result.issuedAt.toLocaleDateString()}
+                  Issued: {result.issuedAt ? result.issuedAt.toLocaleDateString() : 'N/A'}
                 </span>
-                {!verificationLogged ? (
-                  <button
-                    onClick={() => handleLogVerification(!result.revoked)}
-                    disabled={loggingVerification}
-                    className="px-3 py-1.5 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors flex items-center gap-2 text-sm disabled:opacity-50"
-                  >
-                    {loggingVerification ? (
-                      <Loader2 className="animate-spin" size={14} />
-                    ) : (
-                      <ClipboardCheck size={14} />
-                    )}
-                    Log Verification
-                  </button>
-                ) : (
+                {loggingVerification ? (
+                  <span className="px-3 py-1.5 bg-zinc-800 text-white rounded-lg text-sm flex items-center gap-2">
+                    <Loader2 className="animate-spin" size={14} />
+                    Logging...
+                  </span>
+                ) : verificationLogged ? (
                   <span className="px-3 py-1.5 bg-green-900/30 text-green-400 rounded-lg text-sm flex items-center gap-2">
                     <CheckCircle size={14} />
                     Logged
                   </span>
-                )}
+                ) : null}
               </div>
             </div>
             
@@ -248,23 +260,27 @@ export default function VerifierPage() {
                 </div>
               )}
 
-              {ipfsVerified !== null && (
-                <div className={`mt-4 p-3 rounded-lg border flex items-center gap-3 ${
-                  ipfsVerified 
-                    ? 'bg-green-900/20 border-green-800' 
-                    : 'bg-red-900/20 border-red-800'
-                }`}>
-                  {ipfsVerified ? (
-                    <>
-                      <ShieldCheck className="text-green-400" size={20} />
-                      <span className="text-sm text-green-400">IPFS data integrity verified ✓</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="text-red-400" size={20} />
-                      <span className="text-sm text-red-400">IPFS data verification failed</span>
-                    </>
-                  )}
+              {!fetchingIpfs && ipfsVerified === true && (
+                <div className="mt-4 p-3 rounded-lg border flex items-center gap-3 bg-green-900/20 border-green-800">
+                  <ShieldCheck className="text-green-400" size={20} />
+                  <span className="text-sm text-green-400">IPFS data integrity verified</span>
+                </div>
+              )}
+
+              {!fetchingIpfs && ipfsVerified === false && (
+                <div className="mt-4 p-3 rounded-lg border flex items-center gap-3 bg-red-900/20 border-red-800">
+                  <XCircle className="text-red-400" size={20} />
+                  <span className="text-sm text-red-400">IPFS data verification failed - data mismatch</span>
+                </div>
+              )}
+
+              {!fetchingIpfs && ipfsVerified === null && result.cid && (
+                <div className="mt-4 p-3 rounded-lg border flex items-center gap-3 bg-zinc-800/50 border-zinc-700">
+                  <Database className="text-zinc-400" size={20} />
+                  <div className="text-sm text-zinc-400">
+                    <span>IPFS data not available in current session.</span>
+                    <span className="block text-xs text-zinc-500 mt-1">Blockchain verification is still valid. IPFS data may be retrievable from a pinning service.</span>
+                  </div>
                 </div>
               )}
 

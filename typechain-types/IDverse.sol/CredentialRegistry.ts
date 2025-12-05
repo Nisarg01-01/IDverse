@@ -26,6 +26,7 @@ export interface CredentialRegistryInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "credentials"
+      | "didRegistry"
       | "getCredential"
       | "issueCredential"
       | "revokeCredential"
@@ -43,6 +44,10 @@ export interface CredentialRegistryInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "didRegistry",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "getCredential",
     values: [BytesLike]
   ): string;
@@ -57,6 +62,10 @@ export interface CredentialRegistryInterface extends Interface {
 
   decodeFunctionResult(
     functionFragment: "credentials",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "didRegistry",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -185,6 +194,8 @@ export interface CredentialRegistry extends BaseContract {
     "view"
   >;
 
+  didRegistry: TypedContractMethod<[], [string], "view">;
+
   getCredential: TypedContractMethod<
     [credentialId: BytesLike],
     [
@@ -237,6 +248,9 @@ export interface CredentialRegistry extends BaseContract {
     ],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "didRegistry"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "getCredential"
   ): TypedContractMethod<
